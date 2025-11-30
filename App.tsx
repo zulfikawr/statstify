@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import * as htmlToImage from "html-to-image";
 import ReceiptContainer from "./components/ReceiptContainer";
+import StatsContainer from "./components/StatsContainer";
 import Controls from "./components/Controls";
 import CallbackPage from "./pages/CallbackPage";
 import { ReceiptConfig, UserData } from "./types";
 import { MOCK_TRACKS } from "./constants";
-import { generateAnalysis } from "./services/geminiService";
 import {
   redirectToSpotifyLogin,
   fetchSpotifyProfile,
   fetchTopTracks,
 } from "./services/spotifyService";
-import { Music, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, BarChart2 } from "lucide-react";
 
 const App: React.FC = () => {
   // Routing State
@@ -23,6 +23,8 @@ const App: React.FC = () => {
 
   // App State
   const receiptRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+
   const [config, setConfig] = useState<ReceiptConfig>({
     theme: "classic",
     texture: "clean",
@@ -30,30 +32,16 @@ const App: React.FC = () => {
     showBarcode: true,
     length: 10,
     showAlbumArt: false,
-    mode: "standard", // Default page
+    view: "receipt", // 'receipt' or 'stats'
   });
 
   const [userData, setUserData] = useState<UserData | null>(null);
 
-  // Cache for generated texts
-  const [analysisResults, setAnalysisResults] = useState<{
-    vibe: string | null;
-    roast: string | null;
-  }>({
-    vibe: null,
-    roast: null,
-  });
-
-  const [isGenerating, setIsGenerating] = useState(false);
-
   // Handle successful login from CallbackPage
   const handleAuthSuccess = async (accessToken: string) => {
     setToken(accessToken);
-    // Clear URL and update route to home
     window.history.replaceState({}, document.title, "/");
     setCurrentPath("/");
-
-    // Load initial data
     await loadData(accessToken, "short_term");
   };
 
@@ -64,26 +52,11 @@ const App: React.FC = () => {
     setIsLoggingIn(false);
   };
 
-  // Re-fetch when time range changes if logged in
   useEffect(() => {
     if (token && userData) {
       loadData(token, config.timeRange);
     }
   }, [config.timeRange]);
-
-  // Effect to handle AI Generation when mode changes
-  useEffect(() => {
-    if (!userData) return;
-
-    const checkAndGenerate = async () => {
-      if (config.mode === "vibe" && !analysisResults.vibe) {
-        await triggerAnalysis("vibe");
-      } else if (config.mode === "roast" && !analysisResults.roast) {
-        await triggerAnalysis("roast");
-      }
-    };
-    checkAndGenerate();
-  }, [config.mode, userData]);
 
   const loadData = async (accessToken: string, range: string) => {
     setIsLoggingIn(true);
@@ -98,9 +71,6 @@ const App: React.FC = () => {
         username: profile.display_name || "Spotify User",
       };
       setUserData(fullData);
-
-      // Reset analysis on new data load
-      setAnalysisResults({ vibe: null, roast: null });
     } catch (error) {
       console.error("Failed to load Spotify data", error);
       alert("Session expired or error occurred. Please log in again.");
@@ -115,33 +85,17 @@ const App: React.FC = () => {
     redirectToSpotifyLogin();
   };
 
-  const triggerAnalysis = async (type: "vibe" | "roast") => {
-    if (!userData) return;
-    setIsGenerating(true);
-
-    const result = await generateAnalysis(
-      userData.topTracks,
-      userData.topArtists,
-      type,
-    );
-
-    setAnalysisResults((prev) => ({
-      ...prev,
-      [type]: result,
-    }));
-
-    setIsGenerating(false);
-  };
-
   const handleDownload = async () => {
-    if (!receiptRef.current) return;
+    const targetRef = config.view === "receipt" ? receiptRef : statsRef;
+    if (!targetRef.current) return;
+
     try {
-      const dataUrl = await htmlToImage.toPng(receiptRef.current, {
+      const dataUrl = await htmlToImage.toPng(targetRef.current, {
         cacheBust: true,
         pixelRatio: 2,
       });
       const link = document.createElement("a");
-      link.download = `receiptify-${config.mode}-${Date.now()}.png`;
+      link.download = `statstify-${config.view}-${Date.now()}.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -153,11 +107,32 @@ const App: React.FC = () => {
   // Mock data for the landing page visual
   const mockLandingData: UserData = {
     username: "YOUR_NAME",
-    topTracks: MOCK_TRACKS,
+    topTracks: MOCK_TRACKS.map((t) => ({
+      ...t,
+      explicit: false,
+      popularity: 80,
+    })),
     topArtists: ["The Weeknd", "Taylor Swift", "SZA"],
     topGenres: ["Pop", "R&B"],
-    totalMinutes: 1337,
     generatedAt: new Date(),
+    stats: {
+      avgPopularity: 75,
+      explicitCount: 2,
+      avgDuration: 210000,
+      trackCount: 10,
+      varietyScore: 0.8,
+      shortestTrack: MOCK_TRACKS[3], // As It Was
+      longestTrack: MOCK_TRACKS[0], // Midnight City
+    },
+    genreCounts: { Pop: 6, Rock: 3, Indie: 1 },
+    decadeCounts: { "2020s": 8, "2010s": 2 },
+    artistCounts: {
+      "The Weeknd": 3,
+      "Taylor Swift": 2,
+      SZA: 2,
+      M83: 1,
+      "Harry Styles": 2,
+    },
   };
 
   // ROUTER LOGIC
@@ -173,56 +148,68 @@ const App: React.FC = () => {
   // LOGGED IN DASHBOARD
   if (token && userData) {
     return (
-      <div className="min-h-screen bg-[#e5e7eb] flex flex-col md:flex-row md:items-start justify-center p-4 md:p-10 gap-8 overflow-x-hidden font-sans">
-        {/* Left Column: The Receipt */}
-        <div className="relative flex-shrink-0 perspective-1000 order-2 md:order-1 z-10 mb-20 md:mb-0 md:mt-4">
-          <div className="transform transition-transform duration-500">
-            <ReceiptContainer
-              ref={receiptRef}
-              userData={userData}
-              config={config}
-              analysisText={
-                config.mode === "vibe"
-                  ? analysisResults.vibe
-                  : config.mode === "roast"
-                    ? analysisResults.roast
-                    : null
-              }
-              isGenerating={isGenerating}
-            />
-          </div>
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center py-6 px-4 md:py-12 md:px-8 font-sans selection:bg-black selection:text-white">
+        {/* Header (Mobile Only) */}
+        <div className="md:hidden text-center mb-6">
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 flex items-center justify-center gap-2">
+            <BarChart2 className="w-6 h-6" /> Statstify
+          </h2>
         </div>
 
-        {/* Right Column: Controls */}
-        <div className="w-full max-w-sm order-1 md:order-2 flex flex-col gap-6 animate-fadeIn md:sticky md:top-10 md:mt-4">
-          <div className="text-center md:text-left mb-2">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-              Your Receipt
-            </h2>
-            <p className="text-gray-500">Customize, Vibe Check, and Share.</p>
+        <div className="w-full max-w-5xl flex flex-col md:flex-row gap-8 md:gap-16 items-start justify-center">
+          {/* Left Column: The Receipt or Stats */}
+          {/* On mobile: Order 1 (Top). On Desktop: Order 1 (Left) */}
+          <div className="w-full flex justify-center md:justify-end md:w-auto md:flex-shrink-0 relative z-10 order-1">
+            <div className="transform transition-transform duration-500 hover:scale-[1.01] origin-top">
+              {config.view === "receipt" ? (
+                <ReceiptContainer
+                  ref={receiptRef}
+                  userData={userData}
+                  config={config}
+                />
+              ) : (
+                <StatsContainer
+                  ref={statsRef}
+                  userData={userData}
+                  config={config}
+                />
+              )}
+            </div>
           </div>
 
-          <Controls
-            config={config}
-            setConfig={setConfig}
-            onDownload={handleDownload}
-          />
+          {/* Right Column: Controls */}
+          {/* On mobile: Order 2 (Bottom). On Desktop: Sticky */}
+          <div className="w-full md:w-[350px] order-2 md:sticky md:top-8 animate-in slide-in-from-bottom-4 duration-700">
+            <div className="hidden md:block mb-6">
+              <h2 className="text-4xl font-bold tracking-tighter text-gray-900">
+                Statstify
+              </h2>
+              <p className="text-gray-500 font-medium">
+                Analyze your music DNA.
+              </p>
+            </div>
 
-          <div className="text-center mt-4 space-y-2">
-            <button
-              onClick={() => {
-                setToken(null);
-                setUserData(null);
-                window.location.href = "/";
-              }}
-              className="text-xs text-red-400 hover:text-red-600 underline decoration-dotted"
-            >
-              Log Out
-            </button>
-            <p className="text-[10px] text-gray-400 font-mono uppercase">
-              Powered by Spotify API & Gemini
-              <br />
-            </p>
+            <Controls
+              config={config}
+              setConfig={setConfig}
+              onDownload={handleDownload}
+            />
+
+            <div className="text-center mt-6 space-y-2">
+              <button
+                onClick={() => {
+                  setToken(null);
+                  setUserData(null);
+                  window.location.href = "/";
+                }}
+                className="text-xs font-semibold text-red-400 hover:text-red-600 transition-colors"
+              >
+                Log Out
+              </button>
+              <p className="text-[10px] text-gray-300 font-mono uppercase">
+                Powered by Spotify API
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -231,40 +218,40 @@ const App: React.FC = () => {
 
   // LANDING PAGE
   return (
-    <div className="min-h-screen bg-[#f3f4f6] text-gray-900 font-sans overflow-hidden flex flex-col relative selection:bg-green-200">
-      {/* Background Gradients */}
-      <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-      <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-      <div className="absolute bottom-[-20%] left-[20%] w-[60%] h-[60%] bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+    <div className="min-h-screen bg-[#f3f4f6] text-gray-900 font-sans overflow-x-hidden flex flex-col relative selection:bg-green-200">
+      {/* Background Gradients - Adjusted for mobile to prevent overflow */}
+      <div className="fixed top-[-20%] left-[-10%] w-[80%] h-[60%] bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob pointer-events-none"></div>
+      <div className="fixed top-[-20%] right-[-10%] w-[80%] h-[60%] bg-green-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000 pointer-events-none"></div>
+      <div className="fixed bottom-[-20%] left-[20%] w-[80%] h-[60%] bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000 pointer-events-none"></div>
 
       {/* Navbar */}
       <nav className="relative z-10 flex justify-between items-center p-6 md:px-12">
         <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
-          <Music className="w-6 h-6 text-[#1DB954]" />
-          <span>Receiptify AI</span>
+          <BarChart2 className="w-6 h-6 text-[#1DB954]" />
+          <span>Statstify</span>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <main className="relative z-10 flex-1 flex flex-col lg:flex-row items-center justify-center gap-12 px-6 md:px-12 max-w-7xl mx-auto w-full">
+      <main className="relative z-10 flex-1 flex flex-col lg:flex-row items-center justify-center gap-12 lg:gap-20 px-6 md:px-12 max-w-7xl mx-auto w-full py-10 lg:py-0">
         {/* Left Content */}
-        <div className="flex-1 text-center lg:text-left space-y-8 max-w-xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/50 border border-white/60 backdrop-blur-sm text-xs font-semibold uppercase tracking-wider shadow-sm">
+        <div className="flex-1 text-center lg:text-left space-y-6 md:space-y-8 max-w-xl">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/50 border border-white/60 backdrop-blur-sm text-[10px] md:text-xs font-semibold uppercase tracking-wider shadow-sm">
             <Sparkles className="w-3 h-3 text-[#1DB954]" />
-            <span>Now with Gemini AI</span>
+            <span>Now with Audio Analytics</span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold leading-[0.9] tracking-tighter text-gray-900">
-            Your music taste,
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold leading-[0.95] tracking-tighter text-gray-900">
+            Your music stats,
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1DB954] to-[#1ed760]">
-              served fresh.
+              printed fresh.
             </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-gray-600 leading-relaxed">
-            Transform your Spotify top tracks into a shareable receipt. Analyze
-            your vibe check or get roasted by AI.
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed max-w-md mx-auto lg:mx-0">
+            Transform your Spotify history into aesthetic receipts and detailed
+            data reports.
           </p>
 
           <div className="space-y-4">
@@ -272,7 +259,7 @@ const App: React.FC = () => {
               <button
                 onClick={handleLogin}
                 disabled={isLoggingIn}
-                className="px-8 py-4 bg-[#1DB954] text-white rounded-full font-bold text-lg hover:bg-[#1ed760] hover:scale-105 transition-all shadow-xl flex items-center justify-center gap-3 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed group"
+                className="px-8 py-4 bg-[#1DB954] text-white rounded-full font-bold text-base md:text-lg hover:bg-[#1ed760] hover:scale-105 transition-all shadow-xl flex items-center justify-center gap-3 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed group w-full sm:w-auto"
               >
                 {isLoggingIn ? "Connecting..." : "Log in with Spotify"}
                 {!isLoggingIn && (
@@ -282,18 +269,18 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <p className="text-xs text-gray-400">
+          <p className="text-[10px] text-gray-400">
             *Requires a Spotify account. Uses PKCE Secure Flow.
           </p>
         </div>
 
-        {/* Right Visuals (3D Receipts) */}
-        <div className="flex-1 w-full flex items-center justify-center relative perspective-2000 py-20 lg:py-10">
+        {/* Right Visuals (3D Receipts)s */}
+        <div className="flex-1 w-full flex items-center justify-center relative perspective-2000 py-10">
           {/* Floating Elements */}
           <div className="relative transform-style-3d rotate-y-[-12deg] rotate-x-[5deg] hover:rotate-y-[-5deg] hover:rotate-x-[0deg] transition-transform duration-700 ease-out cursor-default">
             {/* Background Receipt (Faded) */}
-            <div className="absolute top-4 -right-12 transform translate-z-[-50px] rotate-6 opacity-60 pointer-events-none blur-[1px]">
-              <ReceiptContainer
+            <div className="absolute top-4 -right-8 md:-right-12 transform translate-z-[-50px] rotate-6 opacity-60 pointer-events-none blur-[1px]">
+              <StatsContainer
                 userData={{ ...mockLandingData, username: "ALT_EGO" }}
                 config={{
                   theme: "dark",
@@ -302,10 +289,8 @@ const App: React.FC = () => {
                   showBarcode: true,
                   length: 15,
                   showAlbumArt: false,
-                  mode: "standard",
+                  view: "stats",
                 }}
-                analysisText={null}
-                isGenerating={false}
               />
             </div>
 
@@ -320,10 +305,8 @@ const App: React.FC = () => {
                   showBarcode: true,
                   length: 10,
                   showAlbumArt: false,
-                  mode: "vibe",
+                  view: "receipt",
                 }}
-                analysisText="CERTIFIED MAINSTREAM BANGERZ. YOU LOVE THE HITS."
-                isGenerating={false}
               />
             </div>
           </div>

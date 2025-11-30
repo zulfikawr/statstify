@@ -15,20 +15,52 @@ export const SPOTIFY_SCOPES = [
   "user-top-read",
   "user-read-private",
   "user-read-email",
+  "user-library-read",
+  "user-read-recently-played",
 ];
 
 // Mock Data
 export const MOCK_TRACKS: Track[] = [
-  { id: "1", name: "Midnight City", artist: "M83", duration_ms: 243000 },
+  {
+    id: "1",
+    name: "Midnight City",
+    artist: "M83",
+    duration_ms: 243000,
+    popularity: 80,
+    explicit: false,
+  },
   {
     id: "2",
     name: "Cruel Summer",
     artist: "Taylor Swift",
     duration_ms: 178000,
+    popularity: 95,
+    explicit: false,
   },
-  { id: "3", name: "Starboy", artist: "The Weeknd", duration_ms: 230000 },
-  { id: "4", name: "As It Was", artist: "Harry Styles", duration_ms: 167000 },
-  { id: "5", name: "Flowers", artist: "Miley Cyrus", duration_ms: 200000 },
+  {
+    id: "3",
+    name: "Starboy",
+    artist: "The Weeknd",
+    duration_ms: 230000,
+    popularity: 90,
+    explicit: true,
+  },
+  {
+    id: "4",
+    name: "As It Was",
+    artist: "Harry Styles",
+    duration_ms: 167000,
+    popularity: 88,
+    explicit: false,
+  },
+  {
+    id: "5",
+    name: "Flowers",
+    artist: "Miley Cyrus",
+    duration_ms: 200000,
+    popularity: 85,
+    explicit: false,
+  },
 ];
 
 export const THEME_STYLES: Record<Theme, string> = {

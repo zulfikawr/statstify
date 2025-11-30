@@ -1,22 +1,13 @@
 import React from "react";
-import {
-  ReceiptConfig,
-  Theme,
-  TimeRange,
-  Texture,
-  ReceiptMode,
-} from "../types";
+import { ReceiptConfig, Theme, TimeRange, Texture } from "../types";
 import {
   Download,
   Share2,
   Minus,
   Plus,
   Image as ImageIcon,
-  ChevronLeft,
-  ChevronRight,
   FileText,
-  Sparkles,
-  Flame,
+  BarChart2,
 } from "lucide-react";
 
 interface ControlsProps {
@@ -38,9 +29,6 @@ const Controls: React.FC<ControlsProps> = ({
     { label: "All Time", value: "long_term" },
   ];
 
-  const modes: ReceiptMode[] = ["standard", "vibe", "roast"];
-  const currentModeIndex = modes.indexOf(config.mode);
-
   const updateConfig = (key: keyof ReceiptConfig, value: any) => {
     setConfig((prev) => ({ ...prev, [key]: value }));
   };
@@ -50,94 +38,46 @@ const Controls: React.FC<ControlsProps> = ({
     updateConfig("length", newLength);
   };
 
-  const handlePageChange = (direction: number) => {
-    const nextIndex = currentModeIndex + direction;
-    if (nextIndex >= 0 && nextIndex < modes.length) {
-      updateConfig("mode", modes[nextIndex]);
-    }
-  };
-
-  const getModeLabel = (mode: ReceiptMode) => {
-    switch (mode) {
-      case "standard":
-        return "Standard Receipt";
-      case "vibe":
-        return "Vibe Analysis";
-      case "roast":
-        return "Roast Me";
-    }
-  };
-
-  const getModeIcon = (mode: ReceiptMode) => {
-    switch (mode) {
-      case "standard":
-        return <FileText className="w-4 h-4" />;
-      case "vibe":
-        return <Sparkles className="w-4 h-4" />;
-      case "roast":
-        return <Flame className="w-4 h-4" />;
-    }
-  };
-
+  // Ensure controls fit width of receipt on mobile but expand on desktop
   return (
-    <div className="bg-white p-6 rounded-3xl shadow-xl w-full max-w-sm mx-auto space-y-6 border border-gray-100">
-      {/* Pagination / Receipt Mode */}
-      <div className="bg-gray-900 rounded-2xl p-4 text-white">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-bold uppercase text-gray-400">
-            Receipt Page
-          </span>
-          <span className="text-xs font-mono opacity-60">
-            {currentModeIndex + 1} / 3
-          </span>
-        </div>
-        <div className="flex items-center justify-between gap-4">
-          <button
-            onClick={() => handlePageChange(-1)}
-            disabled={currentModeIndex === 0}
-            className="p-2 rounded-full hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-
-          <div className="flex flex-col items-center flex-1">
-            <div className="flex items-center gap-2 font-bold mb-1">
-              {getModeIcon(config.mode)}
-              <span>{getModeLabel(config.mode)}</span>
-            </div>
-            <div className="flex gap-1.5">
-              {modes.map((m, idx) => (
-                <div
-                  key={m}
-                  className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${idx === currentModeIndex ? "bg-white scale-125" : "bg-white/30"}`}
-                />
-              ))}
-            </div>
-          </div>
-
-          <button
-            onClick={() => handlePageChange(1)}
-            disabled={currentModeIndex === modes.length - 1}
-            className="p-2 rounded-full hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
+    <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-xl w-full max-w-[340px] md:max-w-sm mx-auto space-y-6 border border-gray-100/50">
+      {/* View Switcher: Receipt vs Stats */}
+      <div className="flex bg-gray-100/80 p-1.5 rounded-xl mb-4">
+        <button
+          onClick={() => updateConfig("view", "receipt")}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold rounded-lg transition-all ${
+            config.view === "receipt"
+              ? "bg-white text-black shadow-sm ring-1 ring-black/5"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5" /> Receipt
+        </button>
+        <button
+          onClick={() => updateConfig("view", "stats")}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold rounded-lg transition-all ${
+            config.view === "stats"
+              ? "bg-white text-black shadow-sm ring-1 ring-black/5"
+              : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          <BarChart2 className="w-3.5 h-3.5" /> Analytics
+        </button>
       </div>
 
       {/* Time Range */}
       <div>
-        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">
           Time Period
         </label>
-        <div className="flex bg-gray-100 p-1 rounded-xl">
+        <div className="flex bg-gray-100/80 p-1.5 rounded-xl">
           {ranges.map((range) => (
             <button
               key={range.value}
               onClick={() => updateConfig("timeRange", range.value)}
-              className={`flex-1 py-2 text-xs font-medium rounded-lg transition-all ${
+              className={`flex-1 py-2 text-[10px] sm:text-xs font-medium rounded-lg transition-all ${
                 config.timeRange === range.value
-                  ? "bg-white text-black shadow-sm"
+                  ? "bg-white text-black shadow-sm ring-1 ring-black/5"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
@@ -147,64 +87,66 @@ const Controls: React.FC<ControlsProps> = ({
         </div>
       </div>
 
-      {/* Item Count & Options */}
-      <div className="flex gap-4">
-        {/* Count Stepper */}
-        <div className="flex-1">
-          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-            Item Count
-          </label>
-          <div className="flex items-center justify-between bg-gray-100 rounded-xl p-1">
+      {/* Item Count & Options (Only for Receipt View) */}
+      {config.view === "receipt" && (
+        <div className="flex gap-4">
+          <div className="flex-1">
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">
+              Count
+            </label>
+            <div className="flex items-center justify-between bg-gray-100/80 rounded-xl p-1.5">
+              <button
+                onClick={() => handleLengthChange(-1)}
+                className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm hover:bg-gray-50 active:scale-95 transition text-gray-700"
+                aria-label="Decrease count"
+              >
+                <Minus className="w-3 h-3" />
+              </button>
+              <span className="font-mono text-sm font-bold text-gray-800 w-8 text-center">
+                {config.length}
+              </span>
+              <button
+                onClick={() => handleLengthChange(1)}
+                className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm hover:bg-gray-50 active:scale-95 transition text-gray-700"
+                aria-label="Increase count"
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1">
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">
+              Art
+            </label>
             <button
-              onClick={() => handleLengthChange(-1)}
-              className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm hover:bg-gray-50 active:scale-95 transition"
+              onClick={() => updateConfig("showAlbumArt", !config.showAlbumArt)}
+              className={`w-full h-[44px] flex items-center justify-center gap-2 rounded-xl text-xs font-bold transition-all border shadow-sm active:scale-95 ${
+                config.showAlbumArt
+                  ? "bg-zinc-900 text-white border-zinc-900"
+                  : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
+              }`}
             >
-              <Minus className="w-3 h-3 text-gray-600" />
-            </button>
-            <span className="font-mono text-sm font-bold text-gray-800 w-8 text-center">
-              {config.length}
-            </span>
-            <button
-              onClick={() => handleLengthChange(1)}
-              className="w-8 h-8 flex items-center justify-center bg-white rounded-lg shadow-sm hover:bg-gray-50 active:scale-95 transition"
-            >
-              <Plus className="w-3 h-3 text-gray-600" />
+              <ImageIcon className="w-3 h-3" />
+              {config.showAlbumArt ? "On" : "Off"}
             </button>
           </div>
         </div>
-
-        {/* Album Art Toggle */}
-        <div className="flex-1">
-          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-            Options
-          </label>
-          <button
-            onClick={() => updateConfig("showAlbumArt", !config.showAlbumArt)}
-            className={`w-full h-[42px] flex items-center justify-center gap-2 rounded-xl text-xs font-bold transition-all border ${
-              config.showAlbumArt
-                ? "bg-black text-white border-black"
-                : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
-            }`}
-          >
-            <ImageIcon className="w-3 h-3" />
-            {config.showAlbumArt ? "Art On" : "Art Off"}
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Theme Selection */}
       <div>
-        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">
           Paper Theme
         </label>
-        <div className="flex gap-3 justify-center">
+        <div className="flex flex-wrap gap-3 justify-center sm:justify-start">
           {themes.map((t) => (
             <button
               key={t}
               onClick={() => updateConfig("theme", t)}
-              className={`w-10 h-10 rounded-full border-2 transition-transform hover:scale-110 ${
+              className={`w-10 h-10 rounded-full border-2 transition-transform hover:scale-110 active:scale-90 ${
                 config.theme === t
-                  ? "border-black scale-110"
+                  ? "border-zinc-900 scale-110"
                   : "border-transparent"
               }`}
               style={{
@@ -228,18 +170,18 @@ const Controls: React.FC<ControlsProps> = ({
 
       {/* Texture Selection */}
       <div>
-        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-          Paper Texture
+        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">
+          Texture
         </label>
-        <div className="flex bg-gray-100 p-1 rounded-xl">
+        <div className="grid grid-cols-3 gap-2">
           {textures.map((t) => (
             <button
               key={t}
               onClick={() => updateConfig("texture", t)}
-              className={`flex-1 py-2 text-xs font-medium uppercase rounded-lg transition-all ${
+              className={`py-2.5 text-[10px] sm:text-xs border rounded-lg uppercase tracking-wide transition-colors active:scale-95 ${
                 config.texture === t
-                  ? "bg-white text-black shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "border-zinc-900 bg-zinc-50 text-black font-bold"
+                  : "border-gray-200 text-gray-500 hover:bg-gray-50 bg-white"
               }`}
             >
               {t}
@@ -249,17 +191,17 @@ const Controls: React.FC<ControlsProps> = ({
       </div>
 
       {/* Actions */}
-      <div className="pt-4 space-y-3">
+      <div className="pt-2 space-y-3">
         <div className="flex gap-3">
           <button
             onClick={onDownload}
-            className="flex-1 flex items-center justify-center gap-2 py-3 bg-black text-white rounded-xl font-bold hover:bg-gray-800 transition-colors active:scale-95"
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-zinc-900 text-white rounded-xl font-bold hover:bg-zinc-800 transition-colors active:scale-95 shadow-lg shadow-zinc-200"
           >
             <Download className="w-4 h-4" />
             Save Image
           </button>
           <button
-            className="px-4 py-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-colors active:scale-95"
+            className="px-4 py-3.5 bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-colors active:scale-95"
             title="Share (Demo)"
             onClick={() =>
               alert("Sharing feature mocked! Image copied to clipboard.")

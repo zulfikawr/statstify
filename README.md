@@ -2,16 +2,14 @@
 
 ![Receiptify Screenshot](./screenshot.png)
 
-> **Your music taste, served fresh.**  
-> *Now with AI-powered Vibe Checks and Roasts.*
+> **Your music stats, printed fresh.**  
+> _A retro receipt generator and data analytics tool for Spotify._
 
 ## ✨ About The Project
 
-**Receiptify AI** is a modern reimagining of the classic Spotify receipt generator. It transforms your top tracks, artists, and genres into an aesthetic, thermal-paper receipt. 
-
-Using the **Google Gemini API**, Receiptify AI analyzes your specific listening habits to provide:
-*   ✨ **Vibe Checks:** A "hipster music critic" analysis of your taste.
-*   🔥 **Roasts:** A savage, snarky cashier judging your guilty pleasures.
+**Statstify AI** (formerly Receiptify AI) is a dual-mode tool for Spotify users. It transforms your top tracks, artists, and genres into:
+1.  **Receipts:** Aesthetic, thermal-paper track lists.
+2.  **Analytics Reports:** Detailed data breakdowns of your audio profile, including artists rotation, mainstreamness, variety, time extremes, top genres, content, and decade categorization.
 
 Built with **React 19**, **Tailwind CSS**, and **Google GenAI SDK**.
 
@@ -19,27 +17,23 @@ Built with **React 19**, **Tailwind CSS**, and **Google GenAI SDK**.
 
 ## 🚀 Features
 
-*   **Spotify Integration:** Securely fetches your Top Tracks (Last Month, 6 Months, All Time) via OAuth PKCE.
-*   **Gemini AI Analysis:** 
-    *   *Standard Mode:* Just the stats.
-    *   *Vibe Mode:* A detailed personality reading based on your music.
-    *   *Roast Mode:* Get humbled by an AI cashier.
-*   **Deep Customization:**
-    *   **Themes:** Classic, Mint, Sakura, Dark Mode, Cyberpunk.
-    *   **Textures:** Clean, Crumpled Paper, Faded Thermal.
-    *   **Options:** Toggle album art, barcodes, and receipt length.
-*   **Export:** High-quality PNG download to share on socials.
+- **Spotify Integration:** Securely fetches your Top Tracks (Last Month, 6 Months, All Time) via OAuth PKCE.
+- **Deep Customization:**
+  - **Themes:** Classic, Mint, Sakura, Dark Mode, Cyberpunk.
+  - **Textures:** Clean, Crumpled Paper, Faded Thermal.
+  - **Options:** Toggle album art, barcodes, and receipt length.
+- **Export:** High-quality PNG download to share on socials.
 
 ---
 
 ## 🛠️ Tech Stack
 
-*   **Frontend:** [React](https://react.dev/) (v19)
-*   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-*   **AI Model:** [Google Gemini 2.5 Flash](https://ai.google.dev/) (`@google/genai`)
-*   **Auth:** Spotify Web API (PKCE Flow)
-*   **Icons:** [Lucide React](https://lucide.dev/)
-*   **Export:** `html-to-image`
+- **Frontend:** [React](https://react.dev/) (v19)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **AI Model:** [Google Gemini 2.5 Flash](https://ai.google.dev/) (`@google/genai`)
+- **Auth:** Spotify Web API (PKCE Flow)
+- **Icons:** [Lucide React](https://lucide.dev/)
+- **Export:** `html-to-image`
 
 ---
 
@@ -49,9 +43,9 @@ Follow these steps to set up the project locally.
 
 ### Prerequisites
 
-*   Node.js (v18+)
-*   A [Spotify Developer](https://developer.spotify.com/dashboard) account.
-*   A [Google AI Studio](https://aistudio.google.com/) account.
+- Node.js (v18+)
+- A [Spotify Developer](https://developer.spotify.com/dashboard) account.
+- A [Google AI Studio](https://aistudio.google.com/) account.
 
 ### 1. Clone the Repository
 
@@ -71,8 +65,8 @@ npm install
 1.  Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard).
 2.  Create a new App.
 3.  In the app settings, add your **Redirect URI**:
-    *   For local dev: `http://localhost:3000/callback`
-    *   *(Or your specific development URL if using Codespaces)*
+    - For local dev: `http://localhost:3000/callback`
+    - _(Or your specific development URL if using Codespaces)_
 4.  Create a `.env` file in the root directory (or set environment variables in your deployment platform):
 
 ```env
@@ -110,8 +104,8 @@ npm start
 
 ## 🔒 Privacy
 
-*   **Token Security:** This app uses the **Authorization Code Flow with PKCE**, the recommended secure standard for client-side apps.
-*   **Data Handling:** Your Spotify data is processed entirely in your browser. It is sent to Google Gemini *only* when you request an analysis, and only the track names/artists are sent as a text prompt. No user data is stored on any server.
+- **Token Security:** This app uses the **Authorization Code Flow with PKCE**, the recommended secure standard for client-side apps.
+- **Data Handling:** Your Spotify data is processed entirely in your browser. It is sent to Google Gemini _only_ when you request an analysis, and only the track names/artists are sent as a text prompt. No user data is stored on any server.
 
 ---
 
