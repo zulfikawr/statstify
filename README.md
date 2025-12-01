@@ -8,6 +8,7 @@
 ## ✨ About The Project
 
 **Statstify AI** (formerly Receiptify AI) is a dual-mode tool for Spotify users. It transforms your top tracks, artists, and genres into:
+
 1.  **Receipts:** Aesthetic, thermal-paper track lists.
 2.  **Analytics Reports:** Detailed data breakdowns of your audio profile, including artists rotation, mainstreamness, variety, time extremes, top genres, content, and decade categorization.
 

@@ -3,7 +3,6 @@ import * as htmlToImage from "html-to-image";
 import ReceiptContainer from "./components/ReceiptContainer";
 import StatsContainer from "./components/StatsContainer";
 import Controls from "./components/Controls";
-import CallbackPage from "./pages/CallbackPage";
 import { ReceiptConfig, UserData } from "./types";
 import { MOCK_TRACKS } from "./constants";
 import {
@@ -14,9 +13,6 @@ import {
 import { ArrowRight, Sparkles, BarChart2 } from "lucide-react";
 
 const App: React.FC = () => {
-  // Routing State
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
-
   // Auth State
   const [token, setToken] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -36,21 +32,6 @@ const App: React.FC = () => {
   });
 
   const [userData, setUserData] = useState<UserData | null>(null);
-
-  // Handle successful login from CallbackPage
-  const handleAuthSuccess = async (accessToken: string) => {
-    setToken(accessToken);
-    window.history.replaceState({}, document.title, "/");
-    setCurrentPath("/");
-    await loadData(accessToken, "short_term");
-  };
-
-  const handleAuthFailure = () => {
-    alert("Authentication failed or was cancelled. Please try again.");
-    window.history.replaceState({}, document.title, "/");
-    setCurrentPath("/");
-    setIsLoggingIn(false);
-  };
 
   useEffect(() => {
     if (token && userData) {
@@ -75,10 +56,29 @@ const App: React.FC = () => {
       console.error("Failed to load Spotify data", error);
       alert("Session expired or error occurred. Please log in again.");
       setToken(null);
+      try {
+        window.localStorage.removeItem("spotify_access_token");
+      } catch (e) {
+        // ignore
+      }
     } finally {
       setIsLoggingIn(false);
     }
   };
+
+  // On mount, check for stored token (set by callback) and load data
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("spotify_access_token");
+      if (stored) {
+        setToken(stored);
+        loadData(stored, config.timeRange);
+      }
+    } catch (e) {
+      // ignore storage errors
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLogin = () => {
     setIsLoggingIn(true);
@@ -135,16 +135,6 @@ const App: React.FC = () => {
     },
   };
 
-  // ROUTER LOGIC
-  if (currentPath === "/callback") {
-    return (
-      <CallbackPage
-        onSuccess={handleAuthSuccess}
-        onFailure={handleAuthFailure}
-      />
-    );
-  }
-
   // LOGGED IN DASHBOARD
   if (token && userData) {
     return (
@@ -200,6 +190,9 @@ const App: React.FC = () => {
                 onClick={() => {
                   setToken(null);
                   setUserData(null);
+                  try {
+                    window.localStorage.removeItem("spotify_access_token");
+                  } catch (e) {}
                   window.location.href = "/";
                 }}
                 className="text-xs font-semibold text-red-400 hover:text-red-600 transition-colors"
